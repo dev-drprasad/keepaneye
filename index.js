@@ -6,6 +6,7 @@ var StringDecoder = require('string_decoder').StringDecoder;
 
 var store = require('./lib/store');
 var handlers = require('./lib/handlers');
+var helpers = require('./lib/helpers');
 var config = require('./config');
 
 var routes = {
@@ -17,21 +18,28 @@ var unifiedServer = function (req, res) {
   var parsedUrl = url.parse(req.url, true);
   
   var path = parsedUrl.pathname.replace(/^\/+|\/+$/g, '');
-  var method = req.method.toUpperCase();
+  var method = req.method.toLowerCase();
   var query = parsedUrl.query;
 
   var decoder = new StringDecoder('utf8');
   var buffer = '';
   req.on('data', function(data) {
-
     buffer += decoder.write(data);
   });
   req.on('end', function () {
     buffer += decoder.end();
 
-    var handler = routes[path] || handlers.notFound;
+    var handler = handlers.notFound;
+    var routePaths = Object.keys(routes);
+    for (var i = 0; i < routePaths.length; i++) {
+      var route = routePaths[i];
+      if (path.startsWith(route)) {
+        handler = routes[route];
+        break;
+      }
+    }
     
-    handler({ path: path, method: method, query: query, payload: JSON.parse(buffer)}, function (statusCode, payload) {
+    handler({ path: path, method: method, query: query, payload: helpers.parseJSON(buffer)}, function (statusCode, payload) {
       res.statusCode = statusCode || 200;
       if (typeof(payload) === 'object') {
         res.setHeader('Content-Type', 'application/json');
