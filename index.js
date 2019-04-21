@@ -12,6 +12,7 @@ var config = require('./config');
 var routes = {
   'ping': handlers.ping,
   'users': handlers.users,
+  'tokens': handlers.tokens,
 };
 
 var unifiedServer = function (req, res) {
@@ -39,7 +40,7 @@ var unifiedServer = function (req, res) {
       }
     }
     
-    handler({ path: path, method: method, query: query, payload: helpers.parseJSON(buffer)}, function (statusCode, payload) {
+    handler({ headers: req.headers, path: path, method: method, query: query, payload: helpers.parseJSON(buffer)}, function (statusCode, payload) {
       res.statusCode = statusCode || 200;
       if (typeof(payload) === 'object') {
         res.setHeader('Content-Type', 'application/json');
